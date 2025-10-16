@@ -9,6 +9,33 @@ if [ -f "$CONFIG_FILE" ]; then
 fi
 
 project-switch() {
+  # Handle --help flag
+  if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    echo "project-switch - Utility for quick switching between projects"
+    echo ""
+    echo "Usage:"
+    echo "  project-switch <project-name>        Switch to existing project"
+    echo "  project-switch -py <project-name>    Switch to project and open in PyCharm"
+    echo "  project-switch --new <project-name>  Create new project with git init"
+    echo "  project-switch -h, --help            Show this help message"
+    echo "  project-switch                       List all available projects"
+    echo ""
+    echo "Configuration:"
+    echo "  PROJECTS_DIR: ${PROJECTS_DIR}"
+    echo "  Config file:  ${CONFIG_FILE}"
+    echo ""
+    echo "Aliases:"
+    echo "  project - shortcut for project-switch"
+    return 0
+  fi
+
+  # Handle -py flag for opening in PyCharm
+  local open_pycharm=0
+  if [ "$1" = "-py" ]; then
+    open_pycharm=1
+    shift
+  fi
+
   # Handle --new flag for creating new projects
   if [ "$1" = "--new" ]; then
     if [ -z "$2" ]; then
@@ -40,6 +67,16 @@ project-switch() {
       else
         echo "Warning: git is not installed, skipping repository initialization"
       fi
+
+      # Open in PyCharm if requested
+      if [ $open_pycharm -eq 1 ]; then
+        if command -v pycharm &>/dev/null; then
+          pycharm .
+          echo "Opening project in PyCharm"
+        else
+          echo "Warning: pycharm command not found"
+        fi
+      fi
     else
       echo "Error: Failed to create project directory '${project_name}'"
       return 1
@@ -69,6 +106,16 @@ project-switch() {
 
   if [ -d "$project_dir" ]; then
     cd "$project_dir" || return 1
+
+    # Open in PyCharm if requested
+    if [ $open_pycharm -eq 1 ]; then
+      if command -v pycharm &>/dev/null; then
+        pycharm .
+        echo "Opening project in PyCharm"
+      else
+        echo "Warning: pycharm command not found"
+      fi
+    fi
   else
     echo "Error: Project '$1' not found in ${PROJECTS_DIR}"
     echo ""
