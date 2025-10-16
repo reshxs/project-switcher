@@ -14,11 +14,12 @@ project-switch() {
     echo "project-switch - Utility for quick switching between projects"
     echo ""
     echo "Usage:"
-    echo "  project-switch <project-name>        Switch to existing project"
-    echo "  project-switch -py <project-name>    Switch to project and open in PyCharm"
-    echo "  project-switch --new <project-name>  Create new project with git init"
-    echo "  project-switch -l, --list            List all available projects"
-    echo "  project-switch -h, --help            Show this help message"
+    echo "  project-switch <project-name>         Switch to existing project"
+    echo "  project-switch -py <project-name>     Switch to project and open in PyCharm"
+    echo "  project-switch -code <project-name>   Switch to project and open in VS Code"
+    echo "  project-switch --new <project-name>   Create new project with git init"
+    echo "  project-switch -l, --list             List all available projects"
+    echo "  project-switch -h, --help             Show this help message"
     echo ""
     echo "Configuration:"
     echo "  PROJECTS_DIR: ${PROJECTS_DIR}"
@@ -48,6 +49,13 @@ project-switch() {
   local open_pycharm=0
   if [ "$1" = "-py" ]; then
     open_pycharm=1
+    shift
+  fi
+
+  # Handle -code flag for opening in VS Code
+  local open_vscode=0
+  if [ "$1" = "-code" ]; then
+    open_vscode=1
     shift
   fi
 
@@ -92,6 +100,16 @@ project-switch() {
           echo "Warning: pycharm command not found"
         fi
       fi
+
+      # Open in VS Code if requested
+      if [ $open_vscode -eq 1 ]; then
+        if command -v code &>/dev/null; then
+          code .
+          echo "Opening project in VS Code"
+        else
+          echo "Warning: code command not found"
+        fi
+      fi
     else
       echo "Error: Failed to create project directory '${project_name}'"
       return 1
@@ -112,6 +130,16 @@ project-switch() {
         echo "Opening project in PyCharm"
       else
         echo "Warning: pycharm command not found"
+      fi
+    fi
+
+    # Open in VS Code if requested
+    if [ $open_vscode -eq 1 ]; then
+      if command -v code &>/dev/null; then
+        code .
+        echo "Opening project in VS Code"
+      else
+        echo "Warning: code command not found"
       fi
     fi
   else
