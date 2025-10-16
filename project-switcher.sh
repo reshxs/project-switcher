@@ -75,9 +75,20 @@ _open_project_in_ide() {
   echo "Opening project in ${ide_name}"
 }
 
+_open_project_in_claude() {
+  if ! command -v claude &>/dev/null; then
+    echo "Warning: claude command not found"
+    return 1
+  fi
+
+  claude
+  echo "Opening project in Claude"
+}
+
 _handle_ide_opening() {
   local should_open_pycharm="$1"
   local should_open_vscode="$2"
+  local should_open_claude="$3"
 
   if [ "$should_open_pycharm" -eq 1 ]; then
     _open_project_in_ide "pycharm" "PyCharm"
@@ -85,6 +96,10 @@ _handle_ide_opening() {
 
   if [ "$should_open_vscode" -eq 1 ]; then
     _open_project_in_ide "code" "VS Code"
+  fi
+
+  if [ "$should_open_claude" -eq 1 ]; then
+    _open_project_in_claude
   fi
 }
 
@@ -96,12 +111,13 @@ _show_help_message() {
   echo "project-switch - Utility for quick switching between projects"
   echo ""
   echo "Usage:"
-  echo "  project-switch <project-name>         Switch to existing project"
-  echo "  project-switch -py <project-name>     Switch to project and open in PyCharm"
-  echo "  project-switch -code <project-name>   Switch to project and open in VS Code"
-  echo "  project-switch --new <project-name>   Create new project with git init"
-  echo "  project-switch -l, --list             List all available projects"
-  echo "  project-switch -h, --help             Show this help message"
+  echo "  project-switch <project-name>           Switch to existing project"
+  echo "  project-switch -py <project-name>       Switch to project and open in PyCharm"
+  echo "  project-switch -code <project-name>     Switch to project and open in VS Code"
+  echo "  project-switch -claude <project-name>   Switch to project and open in Claude"
+  echo "  project-switch --new <project-name>     Create new project with git init"
+  echo "  project-switch -l, --list               List all available projects"
+  echo "  project-switch -h, --help               Show this help message"
   echo ""
   echo "Configuration:"
   echo "  PROJECTS_DIR: ${PROJECTS_DIR}"
@@ -126,6 +142,7 @@ _create_new_project() {
   local project_name="$1"
   local should_open_pycharm="$2"
   local should_open_vscode="$3"
+  local should_open_claude="$4"
 
   _validate_project_name_provided "$project_name" || return 1
 
@@ -142,13 +159,14 @@ _create_new_project() {
   echo "Started new project at $(pwd)"
 
   _initialize_git_repository
-  _handle_ide_opening "$should_open_pycharm" "$should_open_vscode"
+  _handle_ide_opening "$should_open_pycharm" "$should_open_vscode" "$should_open_claude"
 }
 
 _switch_to_existing_project() {
   local project_name="$1"
   local should_open_pycharm="$2"
   local should_open_vscode="$3"
+  local should_open_claude="$4"
 
   local project_dir="${PROJECTS_DIR}/${project_name}"
 
@@ -156,7 +174,7 @@ _switch_to_existing_project() {
 
   cd "$project_dir" || return 1
 
-  _handle_ide_opening "$should_open_pycharm" "$should_open_vscode"
+  _handle_ide_opening "$should_open_pycharm" "$should_open_vscode" "$should_open_claude"
 }
 
 # ============================================================================
@@ -176,28 +194,45 @@ project-switch() {
     return 0
   fi
 
-  # Parse IDE flags
+  # Parse IDE flags in any order
   local should_open_pycharm=0
   local should_open_vscode=0
+  local should_open_claude=0
 
-  if [ "$1" = "-py" ]; then
-    should_open_pycharm=1
-    shift
-  fi
-
-  if [ "$1" = "-code" ]; then
-    should_open_vscode=1
-    shift
-  fi
+  while [[ "$1" == -* ]]; do
+    case "$1" in
+      -py)
+        should_open_pycharm=1
+        shift
+        ;;
+      -code)
+        should_open_vscode=1
+        shift
+        ;;
+      -claude)
+        should_open_claude=1
+        shift
+        ;;
+      --new)
+        # Stop parsing flags when we hit --new
+        break
+        ;;
+      *)
+        echo "Error: Unknown flag '$1'"
+        _show_help_message
+        return 1
+        ;;
+    esac
+  done
 
   # Handle project creation
   if [ "$1" = "--new" ]; then
-    _create_new_project "$2" "$should_open_pycharm" "$should_open_vscode"
+    _create_new_project "$2" "$should_open_pycharm" "$should_open_vscode" "$should_open_claude"
     return $?
   fi
 
   # Handle switching to existing project
-  _switch_to_existing_project "$1" "$should_open_pycharm" "$should_open_vscode"
+  _switch_to_existing_project "$1" "$should_open_pycharm" "$should_open_vscode" "$should_open_claude"
   return $?
 }
 
