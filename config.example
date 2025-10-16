@@ -1,0 +1,5 @@
+# Project Switcher Configuration
+# Copy this file to ~/.config/project-switcher/config and modify as needed
+
+# Directory where your projects are stored
+PROJECTS_DIR="${HOME}/Projects"
