@@ -9,16 +9,16 @@ if [ -f "$CONFIG_FILE" ]; then
 fi
 
 project-switch() {
-  # Handle --help flag
-  if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+  # Handle --help flag or no arguments
+  if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ -z "$1" ]; then
     echo "project-switch - Utility for quick switching between projects"
     echo ""
     echo "Usage:"
     echo "  project-switch <project-name>        Switch to existing project"
     echo "  project-switch -py <project-name>    Switch to project and open in PyCharm"
     echo "  project-switch --new <project-name>  Create new project with git init"
+    echo "  project-switch -l, --list            List all available projects"
     echo "  project-switch -h, --help            Show this help message"
-    echo "  project-switch                       List all available projects"
     echo ""
     echo "Configuration:"
     echo "  PROJECTS_DIR: ${PROJECTS_DIR}"
@@ -26,6 +26,21 @@ project-switch() {
     echo ""
     echo "Aliases:"
     echo "  project - shortcut for project-switch"
+    return 0
+  fi
+
+  # Handle --list flag
+  if [ "$1" = "-l" ] || [ "$1" = "--list" ]; then
+    echo "Available projects:"
+    echo ""
+
+    # Use eza if available, otherwise fall back to ls
+    if command -v eza &>/dev/null; then
+      eza --all --tree --level=1 --icons=always --no-time --no-user --group-directories-first "$PROJECTS_DIR" 2>/dev/null || echo "  (no projects found)"
+    else
+      ls -1 "$PROJECTS_DIR" 2>/dev/null || echo "  (no projects found)"
+    fi
+
     return 0
   fi
 
@@ -85,23 +100,6 @@ project-switch() {
     return 0
   fi
 
-  # Validate input
-  if [ -z "$1" ]; then
-    echo "Usage: project-switch <project-name>"
-    echo "       project-switch --new <project-name>"
-    echo ""
-    echo "Available projects:"
-
-    # Use eza if available, otherwise fall back to ls
-    if command -v eza &>/dev/null; then
-      eza --all --tree --level=1 --icons=always --no-time --no-user --group-directories-first "$PROJECTS_DIR" 2>/dev/null || echo "  (no projects found)"
-    else
-      ls -1 "$PROJECTS_DIR" 2>/dev/null || echo "  (no projects found)"
-    fi
-
-    return 1
-  fi
-
   local project_dir="${PROJECTS_DIR}/$1"
 
   if [ -d "$project_dir" ]; then
@@ -119,15 +117,7 @@ project-switch() {
   else
     echo "Error: Project '$1' not found in ${PROJECTS_DIR}"
     echo ""
-    echo "Available projects:"
-
-    # Use eza if available, otherwise fall back to ls
-    if command -v eza &>/dev/null; then
-      eza --all --tree --level=1 --icons=always --no-time --no-user --group-directories-first "$PROJECTS_DIR" 2>/dev/null
-    else
-      ls -1 "$PROJECTS_DIR" 2>/dev/null
-    fi
-
+    echo "Use 'project-switch -l' to see available projects"
     return 1
   fi
 }
