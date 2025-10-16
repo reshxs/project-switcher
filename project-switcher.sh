@@ -27,8 +27,19 @@ project-switch() {
 
     # Create new project directory
     if mkdir -p "$project_dir"; then
-      echo "Created new project: ${project_name}"
       cd "$project_dir" || return 1
+      echo "Started new project at $(pwd)"
+
+      # Initialize git repository
+      if command -v git &>/dev/null; then
+        if git init; then
+          echo "Initialized git repository"
+        else
+          echo "Warning: Failed to initialize git repository"
+        fi
+      else
+        echo "Warning: git is not installed, skipping repository initialization"
+      fi
     else
       echo "Error: Failed to create project directory '${project_name}'"
       return 1
