@@ -1,3 +1,56 @@
+#!/usr/bin/env bash
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Build configuration
+BUILD_DIR="build"
+OUTPUT_FILE="${BUILD_DIR}/project-switcher"
+
+echo "=== Building Project Switcher ==="
+echo ""
+
+# Create build directory
+if [ ! -d "$BUILD_DIR" ]; then
+  echo -e "${YELLOW}Creating build directory${NC}"
+  mkdir -p "$BUILD_DIR"
+fi
+
+# Check if source files exist
+if [ ! -f "project-switcher.sh" ]; then
+  echo -e "${RED}Error: project-switcher.sh not found${NC}"
+  exit 1
+fi
+
+if [ ! -f "lib/helpers.sh" ]; then
+  echo -e "${RED}Error: lib/helpers.sh not found${NC}"
+  exit 1
+fi
+
+if [ ! -f "commands/open.sh" ]; then
+  echo -e "${RED}Error: commands/open.sh not found${NC}"
+  exit 1
+fi
+
+if [ ! -f "commands/new.sh" ]; then
+  echo -e "${RED}Error: commands/new.sh not found${NC}"
+  exit 1
+fi
+
+if [ ! -f "commands/list.sh" ]; then
+  echo -e "${RED}Error: commands/list.sh not found${NC}"
+  exit 1
+fi
+
+echo -e "${YELLOW}Combining files into single executable${NC}"
+
+# Start building the output file
+cat > "$OUTPUT_FILE" << 'EOF'
 #!/usr/bin/env zsh
 
 # Load configuration
@@ -8,18 +61,52 @@ if [ -f "$CONFIG_FILE" ]; then
   source "$CONFIG_FILE"
 fi
 
-# Get script directory for loading modules
-# Use ${(%):-%x} to get the path of the sourced file in zsh
-SCRIPT_DIR="${${(%):-%x}:A:h}"
+# ============================================================================
+# Helper functions (from lib/helpers.sh)
+# ============================================================================
 
-# Load modules
-source "${SCRIPT_DIR}/lib/helpers.sh"
-source "${SCRIPT_DIR}/commands/open.sh"
-source "${SCRIPT_DIR}/commands/new.sh"
-source "${SCRIPT_DIR}/commands/list.sh"
+EOF
+
+# Add helpers.sh content (skip shebang)
+tail -n +2 lib/helpers.sh >> "$OUTPUT_FILE"
+
+cat >> "$OUTPUT_FILE" << 'EOF'
 
 # ============================================================================
-# Help and list commands
+# Command: open (from commands/open.sh)
+# ============================================================================
+
+EOF
+
+# Add open.sh content (skip shebang and first 7 lines of comments)
+tail -n +2 commands/open.sh >> "$OUTPUT_FILE"
+
+cat >> "$OUTPUT_FILE" << 'EOF'
+
+# ============================================================================
+# Command: new (from commands/new.sh)
+# ============================================================================
+
+EOF
+
+# Add new.sh content (skip shebang and first 7 lines of comments)
+tail -n +2 commands/new.sh >> "$OUTPUT_FILE"
+
+cat >> "$OUTPUT_FILE" << 'EOF'
+
+# ============================================================================
+# Command: list (from commands/list.sh)
+# ============================================================================
+
+EOF
+
+# Add list.sh content (skip shebang)
+tail -n +2 commands/list.sh >> "$OUTPUT_FILE"
+
+cat >> "$OUTPUT_FILE" << 'EOF'
+
+# ============================================================================
+# Help command
 # ============================================================================
 
 _show_help_message() {
@@ -47,7 +134,6 @@ _show_help_message() {
   echo "  project - shortcut for project-switch"
   echo "  pr - shortcut for project-switch"
 }
-
 
 # ============================================================================
 # Main entry point
@@ -166,3 +252,14 @@ fi
 
 alias project="project-switch"
 alias pr="project-switch"
+EOF
+
+# Make executable
+chmod +x "$OUTPUT_FILE"
+
+echo -e "${GREEN}Build complete: ${OUTPUT_FILE}${NC}"
+echo ""
+echo "File size: $(wc -c < "$OUTPUT_FILE") bytes"
+echo "Lines: $(wc -l < "$OUTPUT_FILE") lines"
+echo ""
+echo "To install, run: ./install.sh"

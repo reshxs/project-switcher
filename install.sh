@@ -15,7 +15,7 @@ SCRIPT_NAME="project-switcher"
 ZSHRC="${HOME}/.zshrc"
 
 # Source files
-SCRIPT_FILE="project-switcher.sh"
+BUILD_FILE="build/project-switcher"
 CONFIG_EXAMPLE="config.example"
 
 echo "=== Project Switcher Installation ==="
@@ -27,9 +27,10 @@ if ! command -v zsh &> /dev/null; then
   exit 1
 fi
 
-# Check if source files exist
-if [ ! -f "$SCRIPT_FILE" ]; then
-  echo -e "${RED}Error: $SCRIPT_FILE not found in current directory${NC}"
+# Check if build file exists
+if [ ! -f "$BUILD_FILE" ]; then
+  echo -e "${RED}Error: Build file not found${NC}"
+  echo -e "${YELLOW}Run ./build.sh first to create the executable${NC}"
   exit 1
 fi
 
@@ -45,9 +46,9 @@ if [ ! -d "$CONFIG_DIR" ]; then
   mkdir -p "$CONFIG_DIR"
 fi
 
-# Copy script to bin directory
+# Copy built script to bin directory
 echo -e "${YELLOW}Installing script to ${BIN_DIR}/${SCRIPT_NAME}${NC}"
-cp "$SCRIPT_FILE" "${BIN_DIR}/${SCRIPT_NAME}"
+cp "$BUILD_FILE" "${BIN_DIR}/${SCRIPT_NAME}"
 chmod +x "${BIN_DIR}/${SCRIPT_NAME}"
 
 # Create config if it doesn't exist
@@ -96,6 +97,7 @@ echo -e "${GREEN}=== Installation Complete ===${NC}"
 echo ""
 echo "To start using project-switcher:"
 echo "  1. Restart your terminal or run: source ${ZSHRC}"
-echo "  2. Use: project-switch <project-name> or project <project-name>"
-echo "  3. Configure projects directory in: ${CONFIG_DIR}/config"
+echo "  2. Use: project open <project-name>"
+echo "  3. Use: project new <project-name>"
+echo "  4. Configure projects directory in: ${CONFIG_DIR}/config"
 echo ""
